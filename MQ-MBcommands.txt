@@ -1,0 +1,161 @@
+MQ/MB- Commands-
+
+* MB commands-
+
+sudo su - wmqiadm
+
+1.mqsilist- check which all broker is running.
+2.mqsilist MBPMSQ02:List all the execution groups in the broker flow.
+3.mqsilist MBPMSQ02 -e ToPMS: List all the execution group in the broker flow.
+4.mqsistopmsgflow MBPMSQ02 -e ToPMS -m Starwood.Phoenix.PMS.MTG2PMS_Interactive : to stops the message flow.
+5.mqsistartmsgflow MBCRSQ02 -e StayUpdate -m Starwood.Phoenix.CRS.StayUpdate : starts the message flow.
+6.Deploying Bar File:mqsideploy MBPMSQ03 -e ToPMS -a crs2isac.bar -w 600 - deploys the broker flow from putty. 
+
+Note:- MBPMSQ02- Broker name.
+       ToPMS-Execution Group name.
+       Starwood.Phoenix.PMS.MTG2PMS_Interactive-broker flow name. 
+
+
+* MQ Commands:-
+
+1.dspmq- displays all the Q-manger running.
+2.runmqsc Qmanagername - MQSC commands enable you to perform administration tasks, for example defining, altering, or deleting a local queue object.
+3.dis q(q-name) curdepth ipprocs opprocs
+
+displayes the current depth for the Queue and ipprocs shows number of threads opened that is taking messages out of Queue and opprocs shows number of threads opened which is putting messages into the Queue.
+
+4.clear q(q-name)
+clear all the messages from the Queue. 
+
+5. dmpmqmsg -m QmanagerName -I QueueName -f Qname.txt -da -r 1 
+    deletes top message from queue after taking backup.
+   dmpmqmsg -m QmanagerName -i QueueName -f Qname.txt -da -r "string"
+    take the backup of messages containing that string but do not delete it. 
+
+6.endmqm- stops the Q-manger.
+7.strmqm- starts the Q-manger. 
+
+Note :- don't use command 6&7 without being sure as of why we are doing this. 
+
+8.crtmqm -q -ld /var/mqm/cluster/log/ishan -md /var/mqm/cluster/ -lc -lp 300 -ls 20 -u DEADQ ishan
+creates a Q-manger at cluster level 
+
+9. crtmqm -q -lc -lp 300 -ls 20 -u DEADQ ishan
+creates the Q-manger.
+
+10.define listener(LIST1) trptype(tcp) control(qmgr) port(1418)
+
+defines the listener on which q-manger is running and the corresponding port number for that. 
+
+11. start listener(LIST1)
+starts the Listener on which q-manger is running. 
+
+12. Authentication Command:-
+
+Auth commands:
+
+MQM all object auth
+
+setmqaut -m QMPMSI03 -t qmgr -p mqm +all
+
+
+by default:
+
+ALTER AUTHINFO(SYSTEM.DEFAULT.AUTHINFO.IDPWOS) AUTHTYPE(IDPWOS) CHCKCLNT(REQDADM)
+
+REFRESH SECURITY TYPE(CONNAUTH)
+
+no auth :
+
+ALTER AUTHINFO(SYSTEM.DEFAULT.AUTHINFO.IDPWOS) AUTHTYPE(IDPWOS) CHCKCLNT(OPTIONAL)
+
+REFRESH SECURITY TYPE(CONNAUTH)
+
+13. Deleting messages from Availabilty from multiple Queue's :-
+
+for ((i=0;i<=40;i++)); do ./qload -m QMAVLP01 -I SUAAP.LQ.UPDATE.$i -p; done
+
+14.Channel crestion- sender and recievr :- define chl(QMPROP3.TO.QMPMSI03) chltype(rcvr)
+
+define channel(QMPMSQ02.TO.QMPRPQ02) CHLTYPE(SDR)  XMITQ(QMPRPQ02) CONNAME('phxcrsqmq61.nssd.star(1506)') TRPTYPE(TCP)
+
+15.defining local Queue- define ql(q-name) 
+
+16.defining transmit Queue - define ql(q-name) trigdata(channelname) usage(xmitq)
+
+17.deleting messages with 2 string-
+
+echo "dis qs(dummy) CURDEPTH"|runmqsc QMCRSP01
+
+echo "dis qs(MTG.LQ.MQI.PMS.71) CURDEPTH"|runmqsc QMCRSP01
+
+./qload -m QMCRSP01 -I MTG.LQ.MQI.PMS.71 -f MTG.LQ.MQI.PMS.71_09_06 -da -s "<TXN_ID>ZR83</TX_ID>"
+
+./qload -m QMCRSP01 -o DUMMY -f /home/mqm/MTG.LQ.MQI.PMS.02_1_22july.txt
+
+./qload -m QMCRSP01 -i DUMMY -f DUMMY09 -da -s "<TXN_ID>PD01</TXN>"
+
+./qload -m QMCRSP01 -I DUMMY -o MTG.LQ.MQI.PMS.02
+
+note:- -o is used to put mesages back to the Queue.
+
+18. To check for Q-depth of queue's having Q-depth greater than 1000-
+   dis ql(*) curdepth  where (curdepth gt 1000)
+
+19.Exporting ODBC file after MB restart :-
+
+export ODBCINI=/var/mqsi/odbc/.odbc_Q2.ini- to export ODBC.ini file
+
+20. Q-Creation command
+
+
+DEFINE QREMOTE(MTG.RQ.MQI.ISAC) XMITQ(QMPMSQ03)  RNAME(MQI.LQ.PMS.ISAC.REC) RQMNAME(QMPMSQ03) PUT(ENABLED)
+
+define qalias(Q-name) target(Q-name)
+
+
+ALTER QR(ISAC.RQ.MTE.GRPBLK.00) PUT(ENABLED) FORCE
+
+
+DEFINE QLOCAL(MQI.LQ.PMS.ISAC.REC) LIKE (ISAC.LQ.MTE.GRPBLK.00)
+
+
+DEFINE QLOCAL(MQI.LQ.PMS.ISAC.ERROR) LIKE (ISAC.LQ.MTE.GRPBLK.00)       
+
+21.ps -ef | grep runmqlsr 
+
+To check on which port which q-manager is running. 
+
+22.resolve and reset channel command:-
+
+-resolve chl(channelname) action(commit)
+-reset chl(channelname) seqnum(1)
+
+23. dis qs(q-name) type(handle) all
+
+gives the deatils and process id for all the process connecting to Queue. 
+
+24. dis qmstatus all
+
+gives the number of connection being made to the q-manger. 
+
+25.  mqsideploy MBCRSP01 -e Others -a /tmp/EDAP/EDAP2CONS.bar
+
+
+
+mqsireadlog MBPMSQ04 -u -e ToPMS -o trace.xml 
+mqsiformatlog -i trace.xml -o qatrace.log 
+
+
+mqsichangetrace MBPMSQ04 -t -e ToPMS -l none
+
+
+mqsichangetrace MBPMSQ02 -u -e ToPMS -f Starwood.Phoenix.PMS.MTG2PMS -l normal -c 15000
+
+
+mqsichangetrace MBPMSQ02 -t -e ToPMS -l none
+
+
+mqsireadlog MBPMSQ02 -u -e ToPMS -o trace.xml 
+
+mqsiformatlog -i trace.xml -o qatrace.log 
